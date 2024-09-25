@@ -106,6 +106,21 @@ def run_glide_finetune_epoch(
     glide_model.to(device)
     glide_model.train()
     log = {}
+
+    samples = glide_util.sample(
+        glide_model=glide_model,
+        glide_options=glide_options,
+        side_x=side_x,
+        side_y=side_y,
+        prompt=prompt,
+        batch_size=sample_bs,
+        guidance_scale=sample_gs,
+        device=device,
+        prediction_respacing=sample_respacing,
+        image_to_upsample=image_to_upsample,
+    )
+
+
     for train_idx, batch in enumerate(dataloader):
         accumulated_loss = train_step(
             glide_model=glide_model,

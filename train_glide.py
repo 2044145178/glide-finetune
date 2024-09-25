@@ -20,6 +20,9 @@ class _CustomDataParallel(nn.Module):
         self.model = nn.DataParallel(model).cuda()
 
     def forward(self, *input, **kwargs):
+
+        print(kwargs)
+
         return self.model(*input, **kwargs)
 
     def __getattr__(self, name):
