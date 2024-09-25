@@ -8,12 +8,11 @@ from wandb import wandb
 
 from glide_finetune import glide_util, train_util
 
-
 def base_train_step(
-        glide_model: Text2ImUNet,
-        glide_diffusion: SpacedDiffusion,
-        batch: Tuple[th.Tensor, th.Tensor, th.Tensor],
-        device: str,
+    glide_model: Text2ImUNet,
+    glide_diffusion: SpacedDiffusion,
+    batch: Tuple[th.Tensor, th.Tensor, th.Tensor],
+    device: str,
 ):
     """
     Perform a single training step.
@@ -42,12 +41,11 @@ def base_train_step(
     epsilon, _ = th.split(model_output, C, dim=1)
     return th.nn.functional.mse_loss(epsilon, noise.to(device).detach())
 
-
 def upsample_train_step(
-        glide_model: Text2ImUNet,
-        glide_diffusion: SpacedDiffusion,
-        batch: Tuple[th.Tensor, th.Tensor, th.Tensor, th.Tensor],
-        device: str,
+    glide_model: Text2ImUNet,
+    glide_diffusion: SpacedDiffusion,
+    batch: Tuple[th.Tensor, th.Tensor, th.Tensor, th.Tensor],
+    device: str,
 ):
     """
     Perform a single training step.
@@ -64,10 +62,9 @@ def upsample_train_step(
         Returns:
             The loss.
     """
-
-    tokens, masks, low_res_image, high_res_image = [x.to(device) for x in batch]
+    tokens, masks, low_res_image, high_res_image = [ x.to(device) for x in batch ]
     timesteps = th.randint(0, len(glide_diffusion.betas) - 1, (low_res_image.shape[0],), device=device)
-    noise = th.randn_like(high_res_image, device=device)  # Noise should be shape of output i think
+    noise = th.randn_like(high_res_image, device=device) # Noise should be shape of output i think
     noised_high_res_image = glide_diffusion.q_sample(high_res_image, timesteps, noise=noise).to(device)
     _, C = noised_high_res_image.shape[:2]
     model_output = glide_model(
@@ -81,33 +78,30 @@ def upsample_train_step(
 
 
 def run_glide_finetune_epoch(
-        glide_model: Text2ImUNet,
-        glide_diffusion: SpacedDiffusion,
-        glide_options: dict,
-        dataloader: th.utils.data.DataLoader,
-        optimizer: th.optim.Optimizer,
-        sample_bs: int,  # batch size for inference
-        sample_gs: float = 4.0,  # guidance scale for inference
-        sample_respacing: str = '100',  # respacing for inference
-        prompt: str = "",  # prompt for inference, not training
-        side_x: int = 64,
-        side_y: int = 64,
-        outputs_dir: str = "./outputs",
-        checkpoints_dir: str = "./finetune_checkpoints",
-        device: str = "cpu",
-        log_frequency: int = 100,
-        wandb_run=None,
-        gradient_accumualation_steps=1,
-        epoch: int = 0,
-        train_upsample: bool = False,
-        upsample_factor=4,
-        image_to_upsample='low_res_face.png',
-        local_rank=-1
+    glide_model: Text2ImUNet,
+    glide_diffusion: SpacedDiffusion,
+    glide_options: dict,
+    dataloader: th.utils.data.DataLoader,
+    optimizer: th.optim.Optimizer,
+    sample_bs: int,  # batch size for inference
+    sample_gs: float = 4.0,  # guidance scale for inference
+    sample_respacing: str = '100', # respacing for inference
+    prompt: str = "",  # prompt for inference, not training
+    side_x: int = 64,
+    side_y: int = 64,
+    outputs_dir: str = "./outputs",
+    checkpoints_dir: str = "./finetune_checkpoints",
+    device: str = "cpu",
+    log_frequency: int = 100,
+    wandb_run=None,
+    gradient_accumualation_steps=1,
+    epoch: int = 0,
+    train_upsample: bool = False,
+    upsample_factor=4,
+    image_to_upsample='low_res_face.png',
 ):
-    if train_upsample:
-        train_step = upsample_train_step
-    else:
-        train_step = base_train_step
+    if train_upsample: train_step = upsample_train_step
+    else: train_step = base_train_step
 
     glide_model.to(device)
     glide_model.train()
@@ -149,7 +143,7 @@ def run_glide_finetune_epoch(
                 }
             )
             print(f"Saved sample {sample_save_path}")
-        if train_idx % 5000 == 0 and train_idx > 0 and (device == local_rank or local_rank == -1):
+        if train_idx % 5000 == 0 and train_idx > 0:
             train_util.save_model(glide_model, checkpoints_dir, train_idx, epoch)
             print(
                 f"Saved checkpoint {train_idx} to {checkpoints_dir}/glide-ft-{train_idx}.pt"
