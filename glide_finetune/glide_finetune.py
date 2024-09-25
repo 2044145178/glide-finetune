@@ -117,6 +117,7 @@ def run_glide_finetune_epoch(
         guidance_scale=sample_gs,
         device=device,
         prediction_respacing=sample_respacing,
+        upsample_enabled=train_upsample,
         image_to_upsample=image_to_upsample,
     )
 
