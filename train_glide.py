@@ -12,7 +12,19 @@ from glide_finetune.glide_util import load_model
 from glide_finetune.loader import TextImageDataset
 from glide_finetune.train_util import wandb_setup
 from glide_finetune.wds_loader import glide_wds_loader
+class _CustomDataParallel(nn.Module):
+    def __init__(self, model):
+        super(_CustomDataParallel, self).__init__()
+        self.model = nn.DataParallel(model).cuda()
 
+    def forward(self, *input):
+        return self.model(*input)
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.model.module, name)
 
 def run_glide_finetune(
         data_dir="./data",
@@ -76,7 +88,7 @@ def run_glide_finetune(
         model_type="base" if not enable_upsample else "upsample",
     )
     if th.cuda.is_available():
-        glide_model = nn.DataParallel(glide_model)
+        glide_model = _CustomDataParallel(glide_model)
 
     glide_model.train()
     number_of_params = sum(x.numel() for x in glide_model.parameters())
