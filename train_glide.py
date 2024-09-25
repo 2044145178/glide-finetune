@@ -14,26 +14,27 @@ from glide_finetune.train_util import wandb_setup
 from glide_finetune.wds_loader import glide_wds_loader
 
 
-# class _CustomDataParallel(nn.Module):
-#     def __init__(self, model):
-#         super(_CustomDataParallel, self).__init__()
-#         self.model = nn.DataParallel(model).cuda()
-#
-#     def forward(self, *input, **kwargs):
-#
-#         print(input)
-#
-#         print(kwargs)
-#         print('#######################fix0###############')
-#         res = self.model(*input, **kwargs)
-#         print('#######################fix1###############')
-#         return res
-#
-#     def __getattr__(self, name):
-#         try:
-#             return super().__getattr__(name)
-#         except AttributeError:
-#             return getattr(self.model.module, name)
+class _CustomDataParallel(nn.Module):
+    def __init__(self, model):
+        super(_CustomDataParallel, self).__init__()
+        self.model = nn.DataParallel(model).cuda()
+
+    def forward(self, *input, **kwargs):
+
+        print(input)
+
+        print(kwargs)
+        print('#######################fix0###############')
+        print(self.model)
+        res = self.model(*input, **kwargs)
+        print('#######################fix1###############')
+        return res
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            return getattr(self.model.module, name)
 
 
 def run_glide_finetune(
@@ -118,7 +119,7 @@ def run_glide_finetune(
             enable_image=True,
             enable_text=use_captions,
             enable_upsample=enable_upsample,
-            tokenizer=glide_model.module.tokenizer,
+            tokenizer=glide_model.tokenizer,
             ar_lower=0.5,
             ar_upper=2.0,
             min_original_height=side_x * upsample_factor,
@@ -138,7 +139,7 @@ def run_glide_finetune(
             resize_ratio=resize_ratio,
             uncond_p=uncond_p,
             shuffle=True,
-            tokenizer=glide_model.module.tokenizer,
+            tokenizer=glide_model.tokenizer,
             text_ctx_len=glide_options["text_ctx"],
             use_captions=use_captions,
             enable_glide_upsample=enable_upsample,
@@ -162,10 +163,10 @@ def run_glide_finetune(
     )
 
     if not freeze_transformer:  # if we want to train the transformer, we need to backpropagate through the diffusion model.
-        glide_model.module.out.requires_grad_(True)
-        glide_model.module.input_blocks.requires_grad_(True)
-        glide_model.module.middle_block.requires_grad_(True)
-        glide_model.module.output_blocks.requires_grad_(True)
+        glide_model.out.requires_grad_(True)
+        glide_model.input_blocks.requires_grad_(True)
+        glide_model.middle_block.requires_grad_(True)
+        glide_model.output_blocks.requires_grad_(True)
 
     # Training setup
     outputs_dir = "./outputs"
