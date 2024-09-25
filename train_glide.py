@@ -87,8 +87,8 @@ def run_glide_finetune(
         activation_checkpointing=activation_checkpointing,
         model_type="base" if not enable_upsample else "upsample",
     )
-    if th.cuda.is_available():
-        glide_model = _CustomDataParallel(glide_model)
+    # if th.cuda.is_available():
+    #     glide_model = _CustomDataParallel(glide_model)
 
     glide_model.train()
     number_of_params = sum(x.numel() for x in glide_model.parameters())
