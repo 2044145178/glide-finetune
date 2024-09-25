@@ -24,8 +24,10 @@ class _CustomDataParallel(nn.Module):
         print(input)
 
         print(kwargs)
-
-        return self.model(*input, **kwargs)
+        print('#######################fix0###############')
+        res = self.model(*input, **kwargs)
+        print('#######################fix1###############')
+        return res
 
     def __getattr__(self, name):
         try:
