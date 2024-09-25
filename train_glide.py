@@ -14,26 +14,26 @@ from glide_finetune.train_util import wandb_setup
 from glide_finetune.wds_loader import glide_wds_loader
 
 
-class _CustomDataParallel(nn.Module):
-    def __init__(self, model):
-        super(_CustomDataParallel, self).__init__()
-        self.model = nn.DataParallel(model).cuda()
-
-    def forward(self, *input, **kwargs):
-
-        print(input)
-
-        print(kwargs)
-        print('#######################fix0###############')
-        res = self.model(*input, **kwargs)
-        print('#######################fix1###############')
-        return res
-
-    def __getattr__(self, name):
-        try:
-            return super().__getattr__(name)
-        except AttributeError:
-            return getattr(self.model.module, name)
+# class _CustomDataParallel(nn.Module):
+#     def __init__(self, model):
+#         super(_CustomDataParallel, self).__init__()
+#         self.model = nn.DataParallel(model).cuda()
+#
+#     def forward(self, *input, **kwargs):
+#
+#         print(input)
+#
+#         print(kwargs)
+#         print('#######################fix0###############')
+#         res = self.model(*input, **kwargs)
+#         print('#######################fix1###############')
+#         return res
+#
+#     def __getattr__(self, name):
+#         try:
+#             return super().__getattr__(name)
+#         except AttributeError:
+#             return getattr(self.model.module, name)
 
 
 def run_glide_finetune(
@@ -98,7 +98,7 @@ def run_glide_finetune(
         model_type="base" if not enable_upsample else "upsample",
     )
     if th.cuda.is_available():
-        glide_model = _CustomDataParallel(glide_model)
+        glide_model = nn.DataParallel(glide_model).cuda()
 
     glide_model.train()
     number_of_params = sum(x.numel() for x in glide_model.parameters())
@@ -138,7 +138,7 @@ def run_glide_finetune(
             resize_ratio=resize_ratio,
             uncond_p=uncond_p,
             shuffle=True,
-            tokenizer=glide_model.tokenizer,
+            tokenizer=glide_model.module.tokenizer,
             text_ctx_len=glide_options["text_ctx"],
             use_captions=use_captions,
             enable_glide_upsample=enable_upsample,
