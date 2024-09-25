@@ -160,7 +160,7 @@ def sample(
     if upsample_enabled:
         assert image_to_upsample != '', "You must specify a path to an image to upsample."
         low_res_samples = read_image(image_to_upsample, (side_x, side_y))
-        model_kwargs['low_res'] = low_res_samples
+        model_kwargs['low_res'] = low_res_samples.to(device)
         # noise = th.randn((batch_size, 3, side_y, side_x), device=device) * upsample_temp
         # model_kwargs['noise'] = noise
         model_fn = glide_model # just use the base model, no need for CFG.
