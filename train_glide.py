@@ -118,7 +118,7 @@ def run_glide_finetune(
             enable_image=True,
             enable_text=use_captions,
             enable_upsample=enable_upsample,
-            tokenizer=glide_model.tokenizer,
+            tokenizer=glide_model.module.tokenizer,
             ar_lower=0.5,
             ar_upper=2.0,
             min_original_height=side_x * upsample_factor,
@@ -162,10 +162,10 @@ def run_glide_finetune(
     )
 
     if not freeze_transformer:  # if we want to train the transformer, we need to backpropagate through the diffusion model.
-        glide_model.out.requires_grad_(True)
-        glide_model.input_blocks.requires_grad_(True)
-        glide_model.middle_block.requires_grad_(True)
-        glide_model.output_blocks.requires_grad_(True)
+        glide_model.module.out.requires_grad_(True)
+        glide_model.module.input_blocks.requires_grad_(True)
+        glide_model.module.middle_block.requires_grad_(True)
+        glide_model.module.output_blocks.requires_grad_(True)
 
     # Training setup
     outputs_dir = "./outputs"
