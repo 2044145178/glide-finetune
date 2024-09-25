@@ -25,7 +25,7 @@ class _CustomDataParallel(nn.Module):
 
         print(kwargs)
         print('#######################fix0###############')
-        print(self.model)
+        # print(self.model)
         res = self.model(*input, **kwargs)
         print('#######################fix1###############')
         return res
