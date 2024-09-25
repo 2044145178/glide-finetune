@@ -159,7 +159,7 @@ def sample(
     model_fn = cfg_model_fn # so we use CFG for the base model.
     if upsample_enabled:
         assert image_to_upsample != '', "You must specify a path to an image to upsample."
-        low_res_samples = read_image(image_to_upsample, size=(side_x, side_y))
+        low_res_samples = read_image(image_to_upsample, (side_x, side_y))
         model_kwargs['low_res'] = low_res_samples
         noise = th.randn((batch_size, 3, side_y, side_x), device=device) * upsample_temp
         model_kwargs['noise'] = noise
