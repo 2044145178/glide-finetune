@@ -22,6 +22,7 @@ class _CustomDataParallel(nn.Module):
     def forward(self, *input, **kwargs):
 
         print(input)
+
         print(kwargs)
 
         return self.model(*input, **kwargs)
