@@ -23,7 +23,7 @@ class _CustomDataParallel(nn.Module):
 
         print(input)
 
-        print(**kwargs)
+        print(kwargs)
         print('#######################fix0###############')
         res = self.model(*input, kwargs)
         print('#######################fix1###############')
