@@ -1,9 +1,7 @@
 import argparse
 from glob import glob
 import os
-import torch.distributed as dist
-import torch.multiprocessing as mp
-from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.nn as nn
 import numpy as np
 import torch as th
 import torchvision.transforms as T
@@ -45,7 +43,6 @@ def run_glide_finetune(
         enable_upsample=False,
         upsample_factor=4,
         image_to_upsample='low_res_face.png',
-        local_rank=-1
 ):
     if "~" in data_dir:
         data_dir = os.path.expanduser(data_dir)
@@ -77,13 +74,10 @@ def run_glide_finetune(
         freeze_diffusion=freeze_diffusion,
         activation_checkpointing=activation_checkpointing,
         model_type="base" if not enable_upsample else "upsample",
-        local_rank=local_rank
     )
-    if device == "cuda" and local_rank != -1:
-        glide_model.to(local_rank)
-        glide_model = DDP(glide_model, device_ids=[local_rank], output_device=local_rank)
-    else:
-        glide_model.to(device)
+    if th.cuda.is_available():
+        glide_model = nn.DataParallel(glide_model)
+
     glide_model.train()
     number_of_params = sum(x.numel() for x in glide_model.parameters())
     print(f"Number of parameters: {number_of_params}")
@@ -129,20 +123,9 @@ def run_glide_finetune(
             upscale_factor=upsample_factor,  # TODO: make this a parameter
         )
 
-    if device == "cuda" and local_rank != -1:
-        th.cuda.set_device(local_rank)
-        dist.init_process_group(backend='nccl')
-
-        train_sampler = th.utils.data.distributed.DistributedSampler(dataset)
-
-        device = local_rank
-
-    else:
-        train_sampler = th.utils.data.RandomSampler(dataset)
     # Data loader setup
     dataloader = th.utils.data.DataLoader(
         dataset,
-        sampler=train_sampler,
         batch_size=batch_size,
         shuffle=not use_webdataset,
         num_workers=0,
@@ -182,9 +165,6 @@ def run_glide_finetune(
     os.makedirs(current_run_ckpt_dir, exist_ok=True)
 
     for epoch in trange(num_epochs):
-
-        dataloader.sampler.set_epoch(epoch)
-
         print(f"Starting epoch {epoch}")
         run_glide_finetune_epoch(
             glide_model=glide_model,
@@ -205,7 +185,6 @@ def run_glide_finetune(
             epoch=epoch,
             gradient_accumualation_steps=1,
             train_upsample=enable_upsample,
-            local_rank=-local_rank
         )
 
 
@@ -311,7 +290,6 @@ def parse_args():
         help="Upscale factor for training the upsampling model only"
     )
     parser.add_argument("--image_to_upsample", "-lowres", type=str, default="low_res_face.png")
-    parser.add_argument("--local_rank", default=-1, type=int)
     args = parser.parse_args()
 
     return args
@@ -367,5 +345,4 @@ if __name__ == "__main__":
         enable_upsample=args.train_upsample,
         upsample_factor=args.upscale_factor,
         image_to_upsample=args.image_to_upsample,
-        local_rank=args.local_rank
     )
